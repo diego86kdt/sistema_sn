@@ -1,0 +1,3 @@
+# CHANGELOG v3 -> v5 (DEV)
+
+Detalhes técnicos...

@@ -1,0 +1,1 @@
+// layout.js - preview de logo e cor (local)

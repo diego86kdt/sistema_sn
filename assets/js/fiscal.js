@@ -1,0 +1,1 @@
+// fiscal.js - comportamento do módulo fiscal
