@@ -1,5 +1,7 @@
 {
     "modo": "claro",
     "cor_menu": "dark",
-    "logo": "assets/img/logo_sistema.png"
+    "logo": "assets/img/logo_sistema.png",
+    "ultima_atualizacao": "2025-11-12T00:00:00Z",
+    "versao": "6.2"
 }

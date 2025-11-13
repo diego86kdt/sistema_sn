@@ -21,7 +21,9 @@ while ($r = $anexos_res->fetch_assoc()) $anexos[] = $r['anexo'];
             <label class="form-label">Anexo</label>
             <select id="anexo" class="form-select">
                 <option value="">Selecione...</option>
-                <?php foreach($anexos as $a): ?><option value="<?= htmlspecialchars($a) ?>"><?= htmlspecialchars($a) ?></option><?php endforeach; ?>
+                <?php foreach($anexos as $a): ?>
+                    <option value="<?= htmlspecialchars($a) ?>"><?= htmlspecialchars($a) ?></option>
+                <?php endforeach; ?>
             </select>
         </div>
         <div class="col-md-4">
@@ -49,7 +51,9 @@ while ($r = $anexos_res->fetch_assoc()) $anexos[] = $r['anexo'];
     </form>
 
     <hr>
-    <small class="text-muted">Observação: os dados das faixas são obtidos da parametrização cadastrada no módulo administrativo.</small>
+    <small class="text-muted">
+        Observação: os dados das faixas são obtidos da parametrização cadastrada no módulo administrativo.
+    </small>
 </div>
 
 <script>
@@ -60,47 +64,68 @@ async function buscaFaixas(anexo) {
     return res.json();
 }
 
-function formatBR(v) {
-    return Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+function formatBR(v, dec = 2) {
+    return Number(v).toLocaleString('pt-BR', {
+        minimumFractionDigits: dec,
+        maximumFractionDigits: dec
+    });
 }
 
 document.getElementById('btnCalc').addEventListener('click', async function() {
     const valor12 = parseFloat(document.getElementById('valor12').value) || 0;
     const receita = parseFloat(document.getElementById('receita').value) || 0;
     const anexo = document.getElementById('anexo').value;
-    if (!anexo) { alert('Selecione o anexo'); return; }
+
+    if (!anexo) {
+        alert('Selecione o anexo');
+        return;
+    }
+
     const faixas = await buscaFaixas(anexo);
-    // encontrar faixa onde valor12 se encaixa
     let faixaSel = null;
+
     for (let f of faixas) {
         const vi = parseFloat(f.valor_inicial);
         const vf = parseFloat(f.valor_final);
-        if (valor12 >= vi && valor12 <= vf) { faixaSel = f; break; }
+        if (valor12 >= vi && valor12 <= vf) {
+            faixaSel = f;
+            break;
+        }
     }
+
     if (!faixaSel) {
         alert('Nenhuma faixa encontrada para o valor informado.');
         return;
     }
-    document.getElementById('faixa').value = faixaSel.faixa;
-    // cálculo:
-    // aliquota_percent_faixa = faixaSel.aliquota (ex.: 4.00)
-    // deducao = faixaSel.deducao
-    // aliquota_decimal_result = (valor12 * (aliquota_percent_faixa/100) - deducao) / valor12
-    let aliquota_percent = parseFloat(faixaSel.aliquota) || 0;
-    let deducao = parseFloat(faixaSel.deducao) || 0;
+
+    // Exibir nome + valores da faixa
+    const vi = parseFloat(faixaSel.valor_inicial);
+    const vf = parseFloat(faixaSel.valor_final);
+    document.getElementById('faixa').value =
+        'Faixa ' + faixaSel.faixa +
+        ' (R$ ' + formatBR(vi, 2) + ' – R$ ' + formatBR(vf, 2) + ')';
+
+    // Cálculo com precisão de 13 casas
+    const aliquota_percent = parseFloat(faixaSel.aliquota) || 0;
+    const deducao = parseFloat(faixaSel.deducao) || 0;
     let aliquota_decimal = 0;
+
     if (valor12 > 0) {
-        aliquota_decimal = (valor12 * (aliquota_percent/100) - deducao) / valor12;
+        aliquota_decimal = (valor12 * (aliquota_percent / 100) - deducao) / valor12;
         if (!isFinite(aliquota_decimal)) aliquota_decimal = 0;
     }
-    let aliquota_display_percent = aliquota_decimal * 100;
-    document.getElementById('aliquota').value = (aliquota_display_percent.toFixed(2)) + '%';
-    let valorDAS = receita * aliquota_decimal;
-    document.getElementById('valor_das').value = 'R$ ' + formatBR(valorDAS.toFixed(2));
+
+    // Alíquota exata com 13 casas
+    const aliquota_display_percent = aliquota_decimal * 100;
+    document.getElementById('aliquota').value = aliquota_display_percent.toFixed(13) + '%';
+
+    // Valor do DAS usando a alíquota precisa
+    const valorDAS = receita * (aliquota_display_percent / 100);
+    document.getElementById('valor_das').value = 'R$ ' + formatBR(valorDAS, 2);
 });
 
 // limpar
-document.getElementById('btnLimpar').addEventListener('click', function(){
+document.getElementById('btnLimpar').addEventListener('click', function() {
     document.getElementById('calcForm').reset();
     document.getElementById('faixa').value = '';
     document.getElementById('aliquota').value = '';
